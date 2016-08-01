@@ -14,6 +14,7 @@ def initConnection():
 
 def get_issuse():
     get_issuse = initConnection().issue(username=param.owner_rep, repository=param.repo, number=param.pull_req)
+    # print get_issuse.title
     return get_issuse
 
 
@@ -72,3 +73,4 @@ print get_pull_requests().title
 print check_pull_requests_mergeable()
 # print pull_requests_merge()
 # print create_comment_issuse('test comment')
+
