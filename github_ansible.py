@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 import json
-
+# import param
 
 try:
     from github3 import GitHub
@@ -21,36 +21,75 @@ def get_issuse(**kwargs):
 
 
 def get_issuse_labels(get_issuse):
-    print get_issuse.title
     issuse_labels = get_issuse.labels
-    print(issuse_labels())
     list_get_issuse_labels = []
     for label in issuse_labels():
         list_get_issuse_labels.append(str(label))
     print json.dumps({
-        'labels': (list_get_issuse_labels),
-        "changed": True
+        'labels': (list_get_issuse_labels)
     })
 
 
-def add_issuse_lable(labels):
-    issuse = get_issuse()
-    if isinstance(labels, list):
-        for label in labels:
-            issuse.add_labels(label)
-    elif isinstance(labels, str):
-        issuse.add_labels(labels)
-    get_issuse_labels()
+def add_issuse_lables(get_issuse, add_labels):
+    count_labels_before = len(list(get_issuse.labels()))
+    if isinstance(add_labels, list):
+        for label in add_labels:
+            result = get_issuse.add_labels(label)
+    else:
+        module.fail_json(
+            msg="Enter name correct label ")
+    count_labels_after = len(result)
+    list_get_issuse_labels = []
+    if count_labels_before != count_labels_after:
+        for label in result:
+            list_get_issuse_labels.append(str(label))
+        print json.dumps({
+            'labels': (list_get_issuse_labels),
+            "changed": True
+        })
+    else:
+        for label in result:
+            list_get_issuse_labels.append(str(label))
+        print json.dumps({
+            'labels': (list_get_issuse_labels)
+        })
 
 
-def remove_issuse_lable(labels):
-    issuse = get_issuse()
-    if isinstance(labels, list):
-        for label in labels:
-            issuse.remove_label(label)
-    elif isinstance(labels, str):
-        issuse.remove_label(labels)
-    get_issuse_labels()
+def remove_issuse_labels(get_issuse, remove_labels):
+    count_labels_before = len(list(get_issuse.labels()))
+    if isinstance(remove_labels, list):
+        result = []
+        for label in remove_labels:
+            count = get_issuse.remove_label(label)
+            result.append(count)
+    else:
+        module.fail_json(
+            msg="Enter name correct label ")
+    result = get_issuse.labels()
+    count_labels_after = len(list(result))
+    list_get_issuse_labels = []
+    if count_labels_before != count_labels_after:
+        for label in result:
+            list_get_issuse_labels.append(str(label))
+        print json.dumps({
+            'labels': (list_get_issuse_labels),
+            "changed": True
+        })
+    else:
+        for label in result:
+            list_get_issuse_labels.append(str(label))
+        print json.dumps({
+            'labels': (list_get_issuse_labels)
+        })
+
+
+def create_comment_issuse(get_issuse, comment):
+    issuse = get_issuse
+    issuse.create_comment(comment)
+    print json.dumps({
+        'comment': (comment),
+        "changed": True
+    })
 
 
 def get_pull_requests():
@@ -67,10 +106,6 @@ def pull_requests_merge():
     check_pull_requests_mergeable = get_pull_requests().mergeable
     return check_pull_requests_mergeable
 
-def create_comment_issuse(comment):
-    issuse = get_issuse()
-    issuse.create_comment(comment)
-
 
 
 
@@ -82,9 +117,9 @@ def main():
             password=dict(required=True),
             organization=dict(),
             pull_requests=dict(required=True),
-            labels=dict(),
+            labels=dict(type='list'),
             comment=dict(),
-            state=dict(choices=['labels', 'add_labels', 'remove_labels', 'add_comment', 'merge', 'check_merge'], default='labels'),
+            state=dict(choices=['labels', 'add_label', 'remove_labels', 'add_comment', 'merge', 'check_merge'], default='labels'),
         )
     )
 
@@ -105,10 +140,41 @@ def main():
             issuse = get_issuse(user=user, password=password, repository=repository, pull_requests=pull_requests)
             get_issuse_labels(get_issuse=issuse)
 
+    elif state == 'add_label':
+        if not labels:
+            module.fail_json(
+                msg="Enter name labels to add, example: labels=bug")
+
+        issuse = get_issuse(user=user, password=password, repository=repository, pull_requests=pull_requests,
+                            organization=organization)
+
+        add_issuse_lables(get_issuse=issuse, add_labels=labels)
+
+
+    elif state == 'remove_labels':
+
+        if not labels:
+            module.fail_json(
+                msg="Enter name labels to add, example: labels=bug")
+
+        issuse = get_issuse(user=user, password=password, repository=repository, pull_requests=pull_requests,
+                            organization=organization)
+
+        remove_issuse_labels(get_issuse=issuse, remove_labels=labels)
+    elif state == 'add_comment':
+        if not comment:
+            module.fail_json(
+                msg="Enter  comment  example: comment=bla bla bla")
+
+        issuse = get_issuse(user=user, password=password, repository=repository, pull_requests=pull_requests,
+                            organization=organization)
+
+        create_comment_issuse(get_issuse=issuse, comment=comment)
+
 
     sys.exit(0)
 
-
+# module.exit_json(changed=True, something_else=label)
 
 
 
