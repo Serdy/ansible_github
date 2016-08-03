@@ -1,7 +1,22 @@
 #!/usr/bin/python
+# -*- coding: utf-8 -*-
 
-import json
-# import param
+# (c) 2016, Alex Serdiuk <serdyuk.aleksandr@gmail.com>
+#
+# This file is part of Ansible
+#
+# Ansible is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Ansible is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Ansible.  If not, see <http://www.gnu.org/licenses/>.
 
 try:
     from github3 import GitHub
@@ -92,19 +107,50 @@ def create_comment_issuse(get_issuse, comment):
     })
 
 
-def get_pull_requests():
-    get_pull_requests = initConnection().pull_request(number=pull_requests, owner=organization,
-                                                      repository=repository)
-    return get_pull_requests
+
+def get_pull_requests(**kwargs):
+    for key in kwargs:
+        if key == 'organization' and kwargs[key] is not None:
+            pull_requests = GitHub(kwargs['user'], kwargs['password']).pull_request(owner=kwargs['organization'], repository=kwargs['repository'], number=kwargs['pull_requests'])
+            return pull_requests
+        else:
+            pull_requests = GitHub(kwargs['user'], kwargs['password']).pull_request(owner=kwargs['user'], repository=kwargs['repository'], number=kwargs['pull_requests'])
+            return pull_requests
 
 
-def check_pull_requests_mergeable():
-    check_pull_requests_mergeable = get_pull_requests().mergeable
-    return check_pull_requests_mergeable
 
-def pull_requests_merge():
-    check_pull_requests_mergeable = get_pull_requests().mergeable
-    return check_pull_requests_mergeable
+def check_pull_requests_mergeable(pull_requests):
+    check_pull_requests_mergeable = pull_requests.mergeable
+    print json.dumps({
+        'mergeable': (check_pull_requests_mergeable)
+    })
+
+
+def pull_requests_merge(pull_requests, commit_message):
+    mergeable = pull_requests.mergeable
+    if mergeable is True:
+        merge = pull_requests.merge(commit_message=commit_message)
+        if merge is True:
+            print json.dumps({
+                'merge': (pull_requests.number),
+                'commit_message': (commit_message),
+                "changed": True
+            })
+        else:
+            print json.dumps({
+                'merge': (pull_requests.number),
+                'commit_message': (commit_message),
+                'failed': True
+            })
+    elif mergeable is False:
+        print json.dumps({
+            'msg': "Fix merge conflicts",
+            'merge': (pull_requests.number),
+            'commit_message': (commit_message),
+            'failed': True
+        })
+
+
 
 
 
@@ -170,7 +216,18 @@ def main():
                             organization=organization)
 
         create_comment_issuse(get_issuse=issuse, comment=comment)
+    elif state == 'check_merge':
+        pull_requests = get_pull_requests(user=user, password=password, repository=repository, pull_requests=pull_requests,
+                            organization=organization)
 
+        check_pull_requests_mergeable(pull_requests=pull_requests)
+
+    elif state == 'merge':
+        pull_requests = get_pull_requests(user=user, password=password, repository=repository, pull_requests=pull_requests,
+                            organization=organization)
+        if comment is None:
+            comment = "Ansible merged"
+        pull_requests_merge(pull_requests=pull_requests,commit_message=comment)
 
     sys.exit(0)
 
