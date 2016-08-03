@@ -18,6 +18,144 @@
 # You should have received a copy of the GNU General Public License
 # along with Ansible.  If not, see <http://www.gnu.org/licenses/>.
 
+DOCUMENTATION = '''
+---
+module: gh_pr
+short_description: manage
+objects in gh_pull_requests.
+description:
+-   This module allows the user to manage GitHub Pull Requests(PR) and Issues.
+    Includes support for creating and removing labels, check mergeable for PR, merge PR.
+    This module has a dependency on github3.
+
+version_added: "1"
+options:
+    user:
+    description:
+    - User
+    name
+    for GitHub
+        required: true
+    default: null
+
+    password:
+    description:
+    Secret
+    password
+    for GitHub.
+        required: true
+        default: null
+
+    pull_requests:
+    description:
+    -   Number of PR or issues.
+    required: true
+    default: null
+
+    repository:
+    description:
+    -   Name of GitHub repository
+        required: false
+    organization:
+    description:
+    -   For private repository need name organization
+        required: false
+    default: no
+
+    state:
+    description:
+    -   If C(labels), Show all labels form PR or issues.
+        If C(add_labels) Add labels to PR or issues. Depends on “labels“.
+        If C(remove_labels) Remove  labels to PR or issues. Depends on “labels“.
+        If C(add_comment)  Add comment to PR or issues. Depends on “comment“.
+        If C(check_merge) Check PR on mergeable. Return True or False.
+        If C(merge) Merge PR.
+    required: false
+    default: file
+    choices: [labels, add_labels, remove_labels, add_comment, check_merge, merge]
+
+    labels:
+    description:
+    -   Name of labels.Must be a list.
+    required: false
+
+    comment:
+    description:
+    - Add comment to PR, issues or merge
+    required: false
+    default: null
+'''
+
+EXAMPLES = '''
+# get all labels
+- github_ansible:
+    organization: white-house
+    repository: house
+    pull_requests: 10
+    user: president
+    password: 'security'
+  register: test
+#add lebels
+- github_ansible:
+    organization: white-house
+    repository: house
+    pull_requests: 10
+    user: president
+    password: 'security'
+    state: add_labels
+    labels:
+     - 'bug'
+     - 'invalid'
+  register: test
+
+#Remove labels
+- github_ansible:
+    organization: white-house
+    repository: house
+    pull_requests: 10
+    user: president
+    password: 'security'
+    state: remove_labels
+    labels:
+     - 'bug'
+     - 'invalid'
+  register: test
+#add_comment
+- github_ansible:
+    organization: white-house
+    repository: house
+    pull_requests: 10
+    user: president
+    password: 'security'
+    state: add_comment
+    comment: "bla bla bla"
+  register: test
+#check_merge
+- github_ansible:
+    organization: white-house
+    repository: house
+    pull_requests: 10
+    user: president
+    password: 'security'
+    state: check_merge
+  register: test
+
+#Merge
+- github_ansible:
+    organization: white-house
+    repository: house
+    pull_requests: 10
+    user: president
+    password: 'security'
+    state: merge
+    comment: 'bla bla bal '
+  register: test
+
+'''
+
+
+
+
 try:
     from github3 import GitHub
 except ImportError:
@@ -165,7 +303,7 @@ def main():
             pull_requests=dict(required=True),
             labels=dict(type='list'),
             comment=dict(),
-            state=dict(choices=['labels', 'add_label', 'remove_labels', 'add_comment', 'merge', 'check_merge'], default='labels'),
+            state=dict(choices=['labels', 'add_labels', 'remove_labels', 'add_comment', 'merge', 'check_merge'], default='labels'),
         )
     )
 
@@ -186,7 +324,7 @@ def main():
             issuse = get_issuse(user=user, password=password, repository=repository, pull_requests=pull_requests)
             get_issuse_labels(get_issuse=issuse)
 
-    elif state == 'add_label':
+    elif state == 'add_labels':
         if not labels:
             module.fail_json(
                 msg="Enter name labels to add, example: labels=bug")
@@ -230,9 +368,6 @@ def main():
         pull_requests_merge(pull_requests=pull_requests,commit_message=comment)
 
     sys.exit(0)
-
-# module.exit_json(changed=True, something_else=label)
-
 
 
 from ansible.module_utils.basic import *
