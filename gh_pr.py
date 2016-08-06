@@ -84,6 +84,7 @@ options:
     - Add comment to PR, issues or merge
     required: false
     default: null
+If you try set extra var with space : -e 'labels="testing testing"'
 '''
 
 EXAMPLES = '''
