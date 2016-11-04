@@ -312,12 +312,12 @@ def main():
         argument_spec=dict(
             repository=dict(required=True),
             user=dict(required=True),
-            password=dict(required=True),
+            password=dict(required=True, no_log=True),
             organization=dict(),
             pull_requests=dict(required=True),
             labels=dict(type='list'),
             comment=dict(),
-            state=dict(choices=['labels', 'add_labels', 'remove_labels', 'add_comment', 'merge', 'check_merge'], default='labels'),
+            state=dict(choices=['labels', 'add_labels', 'remove_labels', 'add_comment', 'merge', 'check_merge', 'merge_to'], default='labels'),
         )
     )
 
@@ -371,19 +371,19 @@ def main():
 
     elif state == 'check_merge':
         pull_requests = get_pull_requests(user=user, password=password, repository=repository, pull_requests=pull_requests,
-                            organization=organization)
+                                          organization=organization)
 
         check_pull_requests_mergeable(pull_requests=pull_requests)
 
     elif state == 'merge_to':
         pull_requests = get_pull_requests(user=user, password=password, repository=repository, pull_requests=pull_requests,
-                            organization=organization)
+                                          organization=organization)
 
         get_base_merge(pull_requests=pull_requests)
 
     elif state == 'merge':
         pull_requests = get_pull_requests(user=user, password=password, repository=repository, pull_requests=pull_requests,
-                            organization=organization)
+                                          organization=organization)
         if comment is None:
             comment = "Ansible merged"
         pull_requests_merge(pull_requests=pull_requests,commit_message=comment)
