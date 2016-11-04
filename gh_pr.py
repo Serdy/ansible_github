@@ -70,6 +70,7 @@ options:
         If C(add_comment)  Add comment to PR or issues. Depends on “comment“.
         If C(check_merge) Check PR on mergeable. Return True or False.
         If C(merge) Merge PR.
+        If C(merge_to) Show branch base of the merge.
     required: false
     default: file
     choices: [labels, add_labels, remove_labels, add_comment, check_merge, merge]
@@ -84,7 +85,6 @@ options:
     - Add comment to PR, issues or merge
     required: false
     default: null
-If you try set extra var with space : -e 'labels="testing testing"'
 '''
 
 EXAMPLES = '''
@@ -151,7 +151,15 @@ EXAMPLES = '''
     state: merge
     comment: 'bla bla bal '
   register: test
-
+#Show branch base of the merge.
+- github_ansible:
+    organization: white-house
+    repository: house
+    pull_requests: 10
+    user: president
+    password: 'security'
+    state: merge_to
+  register: test
 '''
 
 
@@ -256,6 +264,11 @@ def get_pull_requests(**kwargs):
             pull_requests = GitHub(kwargs['user'], kwargs['password']).pull_request(owner=kwargs['user'], repository=kwargs['repository'], number=kwargs['pull_requests'])
             return pull_requests
 
+def get_base_merge(pull_requests):
+    name_branch = pull_requests.base.ref
+    print json.dumps({
+        'merge_to': (name_branch)
+    })
 
 
 def check_pull_requests_mergeable(pull_requests):
@@ -355,11 +368,18 @@ def main():
                             organization=organization)
 
         create_comment_issuse(get_issuse=issuse, comment=comment)
+
     elif state == 'check_merge':
         pull_requests = get_pull_requests(user=user, password=password, repository=repository, pull_requests=pull_requests,
                             organization=organization)
 
         check_pull_requests_mergeable(pull_requests=pull_requests)
+
+    elif state == 'merge_to':
+        pull_requests = get_pull_requests(user=user, password=password, repository=repository, pull_requests=pull_requests,
+                            organization=organization)
+
+        get_base_merge(pull_requests=pull_requests)
 
     elif state == 'merge':
         pull_requests = get_pull_requests(user=user, password=password, repository=repository, pull_requests=pull_requests,
